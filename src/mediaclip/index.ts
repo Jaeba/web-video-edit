@@ -40,11 +40,13 @@ export async function createMediaFromFile(file: File): Promise<Array<AbstractCli
           videoFrameSource = source;
           return source;
         }),
-        MediaLoader.loadAudioMedia(file)
+        MediaLoader.tryLoadAudioMedia(file)
       ]);
 
       const videoMedia = new VideoMedia(file.name, frameSource);
-      const audioMedia = new AudioMedia(file.name, audioFrameSource);
+      const audioMedia = audioFrameSource
+        ? new AudioMedia(file.name, audioFrameSource)
+        : new AudioMedia(file.name);
       const composedMedia = new ComposedMedia(videoMedia, audioMedia);
       layers.push(composedMedia);
       onLoadUpdateListener(100, file.name, composedMedia, composedMedia.audio.audioBuffer);

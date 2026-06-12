@@ -63,6 +63,14 @@ export class MediaLoader {
     });
   }
 
+  static async tryLoadAudioMedia(file: LayerFile, onProgress?: LoadProgressCallback): Promise<AudioFrameSource | null> {
+    try {
+      return await MediaLoader.loadAudioMedia(file, onProgress);
+    } catch {
+      return null;
+    }
+  }
+
   static loadAudioMedia(file: LayerFile, onProgress?: LoadProgressCallback): Promise<AudioFrameSource> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();

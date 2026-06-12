@@ -72,6 +72,9 @@ export class AudioMedia extends AbstractClip implements IAudioClip {
   }
 
   connectAudioSource(playerAudioContext: ESAudioContext): void {
+    if (!this._audioBuffer) {
+      return;
+    }
     this.disconnect();
     this.currentSpeed = this._speedController.getSpeed();
     this.lastAppliedSpeed = this.currentSpeed;
@@ -118,10 +121,16 @@ export class AudioMedia extends AbstractClip implements IAudioClip {
   }
 
   playStart(time: number): void {
+    if (!this._audioBuffer) {
+      return;
+    }
     this.source.start(time / 1000, 0);
   }
 
   scheduleStart(scheduleTime: number, offset: number): void {
+    if (!this._audioBuffer) {
+      return;
+    }
     if (!this.source.isConnected) {
       this.connectAudioSource(this._playerAudioContext!);
     }

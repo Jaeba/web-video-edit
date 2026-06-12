@@ -73,7 +73,7 @@ export class ComposedMedia extends AbstractClip implements IAudioClip{
   }
 
   isAudio(): boolean {
-    return true;
+    return this.audioMedia.audioBuffer !== null;
   }
 
   setSpeed(speed: number): void {

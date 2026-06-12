@@ -5,6 +5,7 @@ import {fps, max_size, setFps, setMaxSize} from './constants.js';
 import {createSpeechService} from "@/speech";
 import {createShapeView} from "@/shape";
 import {createSearchService} from "@/search";
+import {createNoiseLabService} from "@/noise-lab";
 import {createClipSettingsService} from "@/settings";
 import {initScreenRecording} from "@/recording/controls";
 
@@ -12,6 +13,7 @@ const studio = initStudio();
 new TabController('leftNav');
 const speechService = createSpeechService();
 const searchService = createSearchService();
+const noiseLabService = createNoiseLabService();
 const clipSettingsService = createClipSettingsService();
 const shapeView = createShapeView('shapes', (shapeType: ShapeType) => {
   studio.addLayer(createMediaShape(shapeType));
@@ -28,6 +30,8 @@ window.popup = popup;
 window.speechService = speechService;
 // @ts-ignore
 window.searchService = searchService;
+// @ts-ignore
+window.noiseLabService = noiseLabService;
 
 window.addEventListener('load', async function () {
   await initLeftNavControls();
@@ -40,6 +44,7 @@ async function initLeftNavControls(): Promise<void> {
   initSettingsControls();
   clipSettingsService.init();
   await searchService.init();
+  await noiseLabService.init();
   speechService.initialize()
   shapeView.init();
 }
