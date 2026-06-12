@@ -1,6 +1,24 @@
 import type {PixelSpecimen, SpecimenConfig, SpecimenProgress} from './types.js';
 import {VideoFrameReader} from './video-frame-reader.js';
 
+const BYTES_PER_STORED_NUMBER = 8;
+
+export function calculatePixelSpecimenBytes(h: number, w: number, frameCount: number): number {
+  return h * w * frameCount * 3 * BYTES_PER_STORED_NUMBER;
+}
+
+export function formatPixelSpecimenMemorySize(h: number, w: number, frameCount: number): string {
+  const bytes = calculatePixelSpecimenBytes(h, w, frameCount);
+  const megabytes = bytes / (1024 * 1024);
+
+  if (megabytes >= 0.01) {
+    return `${megabytes.toFixed(2)}Mb`;
+  }
+
+  const kilobytes = bytes / 1024;
+  return `${kilobytes.toFixed(1)}Kb`;
+}
+
 export function createEmptySpecimen(h: number, w: number, frameCount: number): PixelSpecimen {
   const specimen: PixelSpecimen = [];
   for (let i = 0; i < h; i++) {

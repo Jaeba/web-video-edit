@@ -1,4 +1,5 @@
 import type {StoredFileMetadata} from '@/medialibrary/file-storage';
+import {formatPixelSpecimenMemorySize} from './specimen-builder.js';
 import type {PixelSpecimen, Region, SpecimenProgress, VideoFrameInfo} from './types.js';
 
 export type VideoSelectedCallback = (fileId: string) => void;
@@ -160,9 +161,10 @@ export class NoiseLabView {
     }
 
     const h = specimen.length;
+    const memorySize = formatPixelSpecimenMemorySize(h, w, frameCount);
     this.#specimenInfo.innerHTML = `
       <span class="noise-lab-specimen-badge">Ready</span>
-      <span>${h} × ${w} × ${frameCount} × 3</span>
+      <span>${h} × ${w} × ${frameCount} × 3 (${memorySize})</span>
     `;
     this.#specimenInfo.classList.add('visible');
   }
