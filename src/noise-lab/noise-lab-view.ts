@@ -1,6 +1,6 @@
 import type {StoredFileMetadata} from '@/medialibrary/file-storage';
 import {formatPixelSpecimenMemorySize} from './specimen-builder.js';
-import type {PixelSpecimen, Region, SpecimenProgress, VideoFrameInfo} from './types.js';
+import type {Region, SpecimenProgress, VideoFrameInfo} from './types.js';
 
 export type VideoSelectedCallback = (fileId: string) => void;
 export type FrameChangedCallback = (frame: number, immediate?: boolean) => void;
@@ -23,10 +23,11 @@ export class NoiseLabView {
   #prepareButton: HTMLButtonElement | null = null;
   #statusEl: HTMLElement | null = null;
   #progressBar: HTMLElement | null = null;
-  #specimenInfo: HTMLElement | null = null;
+  #specimenEstimate: HTMLElement | null = null;
   #videoInfo: HTMLElement | null = null;
 
   #onVideoSelected: VideoSelectedCallback | null = null;
+  #specimenReady = false;
   #onFrameChanged: FrameChangedCallback | null = null;
   #onRegionChanged: RegionChangedCallback | null = null;
   #onPrepareSpecimen: PrepareSpecimenCallback | null = null;
@@ -89,12 +90,14 @@ export class NoiseLabView {
       this.#videoInfo.textContent = '';
       this.#maxFrames = 0;
       this.#updateFrameSliderRange();
+      this.#updateSpecimenEstimate();
       return;
     }
 
     this.#maxFrames = info.frameCount;
     this.#videoInfo.textContent = `${info.width} × ${info.height} · ${info.frameCount} frames`;
     this.#updateFrameSliderRange();
+    this.#updateSpecimenEstimate();
   }
 
   setRegion(region: Region, emit = true): void {
@@ -106,6 +109,7 @@ export class NoiseLabView {
       }
     }
     this.#suppressRegionEvent = false;
+    this.#updateSpecimenEstimate();
   }
 
   setStartFrame(frame: number): void {
@@ -155,25 +159,14 @@ export class NoiseLabView {
     }
   }
 
-  showSpecimenReady(specimen: PixelSpecimen, w: number, frameCount: number): void {
-    if (!this.#specimenInfo) {
-      return;
-    }
-
-    const h = specimen.length;
-    const memorySize = formatPixelSpecimenMemorySize(h, w, frameCount);
-    this.#specimenInfo.innerHTML = `
-      <span class="noise-lab-specimen-badge">Ready</span>
-      <span>${h} × ${w} × ${frameCount} × 3 (${memorySize})</span>
-    `;
-    this.#specimenInfo.classList.add('visible');
+  showSpecimenReady(): void {
+    this.#specimenReady = true;
+    this.#updateSpecimenEstimate();
   }
 
-  clearSpecimenInfo(): void {
-    if (this.#specimenInfo) {
-      this.#specimenInfo.classList.remove('visible');
-      this.#specimenInfo.innerHTML = '';
-    }
+  clearSpecimenReady(): void {
+    this.#specimenReady = false;
+    this.#updateSpecimenEstimate();
   }
 
   #buildUI(): void {
@@ -232,13 +225,14 @@ export class NoiseLabView {
           </div>
         </div>
 
+        <div class="noise-lab-specimen-estimate" id="noise-lab-specimen-estimate"></div>
+
         <button id="noise-lab-prepare-btn" class="action-button primary" disabled>Prepare Specimen</button>
 
         <div class="noise-lab-progress">
           <div class="noise-lab-progress-bar" id="noise-lab-progress-bar"></div>
         </div>
         <div class="noise-lab-status" id="noise-lab-status"></div>
-        <div class="noise-lab-specimen-info" id="noise-lab-specimen-info"></div>
       </div>
     `;
 
@@ -254,7 +248,7 @@ export class NoiseLabView {
     this.#prepareButton = this.#container.querySelector('#noise-lab-prepare-btn');
     this.#statusEl = this.#container.querySelector('#noise-lab-status');
     this.#progressBar = this.#container.querySelector('#noise-lab-progress-bar');
-    this.#specimenInfo = this.#container.querySelector('#noise-lab-specimen-info');
+    this.#specimenEstimate = this.#container.querySelector('#noise-lab-specimen-estimate');
     this.#videoInfo = this.#container.querySelector('#noise-lab-video-info');
 
     this.#bindEvents();
@@ -285,6 +279,7 @@ export class NoiseLabView {
 
     this.#frameCountInput?.addEventListener('input', () => {
       this.#updatePrepareButtonState();
+      this.#updateSpecimenEstimate();
     });
 
     this.#prepareButton?.addEventListener('click', () => {
@@ -315,6 +310,7 @@ export class NoiseLabView {
 
     this.#onRegionChanged?.(region);
     this.#updatePrepareButtonState();
+    this.#updateSpecimenEstimate();
   }
 
   #updateFrameSliderRange(): void {
@@ -336,6 +332,33 @@ export class NoiseLabView {
       this.#frameLabel.textContent = String(frame);
     }
     this.#updatePrepareButtonState();
+  }
+
+  #updateSpecimenEstimate(): void {
+    if (!this.#specimenEstimate) {
+      return;
+    }
+
+    const hasVideo = Boolean(this.#videoSelector?.value);
+    if (!hasVideo) {
+      this.#specimenEstimate.classList.remove('visible', 'ready');
+      this.#specimenEstimate.innerHTML = '';
+      return;
+    }
+
+    const side = Math.max(1, Number(this.#coordInputs.w?.value ?? 1));
+    const frameCount = Math.max(1, Number(this.#frameCountInput?.value ?? 1));
+    const memorySize = formatPixelSpecimenMemorySize(side, side, frameCount);
+    const readyBadge = this.#specimenReady
+      ? '<span class="noise-lab-specimen-badge">Ready</span>'
+      : '';
+
+    this.#specimenEstimate.innerHTML = `
+      ${readyBadge}
+      <span>${side} × ${side} × ${frameCount} × 3 (${memorySize})</span>
+    `;
+    this.#specimenEstimate.classList.add('visible');
+    this.#specimenEstimate.classList.toggle('ready', this.#specimenReady);
   }
 
   #updatePrepareButtonState(): void {

@@ -28,7 +28,7 @@ export class NoiseLabService {
       this.#regionSelector = new RegionSelector(canvas);
       this.#regionSelector.setChangeCallback((region) => {
         this.#view.setRegion(region, false);
-        this.#view.clearSpecimenInfo();
+        this.#view.clearSpecimenReady();
       });
     }
 
@@ -53,7 +53,7 @@ export class NoiseLabService {
   async #onVideoSelected(fileId: string): Promise<void> {
     this.#selectedVideoId = fileId;
     this.#specimen = null;
-    this.#view.clearSpecimenInfo();
+    this.#view.clearSpecimenReady();
     this.#view.setLoading(true, 'Loading video...');
 
     this.#previewReader?.close();
@@ -121,7 +121,7 @@ export class NoiseLabService {
     };
     this.#regionSelector?.setRegion(square);
     this.#view.setRegion(square, false);
-    this.#view.clearSpecimenInfo();
+    this.#view.clearSpecimenReady();
   }
 
   async #loadPreviewFrame(frame: number): Promise<void> {
@@ -166,7 +166,7 @@ export class NoiseLabService {
     };
 
     this.#view.setPreparing(true);
-    this.#view.clearSpecimenInfo();
+    this.#view.clearSpecimenReady();
 
     try {
       const specimen = await buildSpecimen(this.#videoBuffer, config, (progress) => {
@@ -174,7 +174,7 @@ export class NoiseLabService {
       });
 
       this.#specimen = specimen;
-      this.#view.showSpecimenReady(specimen, config.w, config.frameCount);
+      this.#view.showSpecimenReady();
     } catch (error) {
       console.error('Specimen preparation failed:', error);
       this.#view.updateProgress({

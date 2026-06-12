@@ -2008,21 +2008,27 @@ a:visited {
   opacity: 1;
 }
 
-.noise-lab-specimen-info {
+.noise-lab-specimen-estimate {
   display: none;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  background: rgba(169, 225, 250, 0.08);
-  border: 1px solid rgba(169, 225, 250, 0.25);
+  background: rgba(169, 225, 250, 0.05);
+  border: 1px solid rgba(169, 225, 250, 0.15);
   border-radius: 6px;
   font-size: 13px;
   color: rgb(192, 200, 213);
   font-family: 'JupiterSans', monospace;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.noise-lab-specimen-info.visible {
+.noise-lab-specimen-estimate.visible {
   display: flex;
+}
+
+.noise-lab-specimen-estimate.ready {
+  background: rgba(169, 225, 250, 0.08);
+  border-color: rgba(169, 225, 250, 0.25);
 }
 
 .noise-lab-specimen-badge {
