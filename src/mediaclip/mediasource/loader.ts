@@ -1,5 +1,5 @@
 import {loadVideo} from "@/video";
-import {LayerFile, VideoMetadata} from "@/mediaclip/types";
+import {LayerFile} from "@/mediaclip/types";
 import {AudioFrameSource, FrameSource, FrameSourceMetadata} from "./types";
 import {VideoFrameSource} from "./video-frame-source";
 import {ImageFrameSource} from "./image-frame-source";
@@ -18,28 +18,17 @@ export class MediaLoader {
     return MediaLoader.audioContext;
   }
 
-  static loadVideoMedia(file: LayerFile, onProgress: LoadProgressCallback): Promise<FrameSource> {
-    return new Promise((resolve, reject) => {
-      loadVideo(file, (progress: number, metadata: VideoMetadata | null): void => {
-        onProgress(progress);
-        if (progress < 100) {
-          return;
-        }
+  static async loadVideoMedia(file: LayerFile, onProgress: LoadProgressCallback): Promise<FrameSource> {
+    const metadata = await loadVideo(file, onProgress);
 
-        if (!metadata) {
-          return;
-        }
+    const frameSourceMetadata: FrameSourceMetadata = {
+      width: metadata.width,
+      height: metadata.height,
+      totalTimeInMilSeconds: metadata.totalTimeInMilSeconds,
+      timestamps: metadata.timestamps
+    };
 
-        const frameSourceMetadata: FrameSourceMetadata = {
-          width: metadata.width,
-          height: metadata.height,
-          totalTimeInMilSeconds: metadata.totalTimeInMilSeconds,
-          timestamps: metadata.timestamps
-        };
-
-        resolve(new VideoFrameSource(metadata.videoSink, frameSourceMetadata));
-      });
-    });
+    return new VideoFrameSource(metadata.videoSink, frameSourceMetadata);
   }
 
   static loadImageMedia(file: LayerFile, onProgress?: LoadProgressCallback): Promise<FrameSource> {

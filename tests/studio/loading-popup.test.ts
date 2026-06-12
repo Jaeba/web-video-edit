@@ -293,5 +293,33 @@ describe('LoadingPopup', () => {
       expect(mockCurrentFileText.textContent).toContain(longName);
     });
   });
+
+  describe('cancelLoading', () => {
+    test('should hide popup when cancelling the only active load', () => {
+      loadingPopup.startLoading('layer1', 'test.mp4');
+      loadingPopup.cancelLoading('layer1');
+
+      expect(mockPopup.style.display).toBe('none');
+    });
+
+    test('should keep popup visible when other loads remain', () => {
+      loadingPopup.startLoading('layer1', 'video1.mp4');
+      loadingPopup.startLoading('layer2', 'video2.mp4');
+      loadingPopup.cancelLoading('layer1');
+
+      expect(mockPopup.style.display).toBe('block');
+      expect(mockCurrentFileText.textContent).toContain('video2.mp4');
+    });
+
+    test('should ignore cancel for unknown layer IDs', () => {
+      loadingPopup.startLoading('layer1', 'test.mp4');
+
+      expect(() => {
+        loadingPopup.cancelLoading('unknown');
+      }).not.toThrow();
+
+      expect(mockPopup.style.display).toBe('block');
+    });
+  });
 });
 

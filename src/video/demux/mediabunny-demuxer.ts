@@ -77,6 +77,7 @@ export class MediaBunnyDemuxer {
           break;
 
         case 'error':
+          this.cleanup();
           reject(new Error(message.message));
           break;
       }

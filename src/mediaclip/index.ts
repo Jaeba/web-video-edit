@@ -31,18 +31,27 @@ export async function createMediaFromFile(file: File): Promise<Array<AbstractCli
 
   const layers: AbstractClip[] = [];
   if (file.type.indexOf('video') >= 0) {
-    const [frameSource, audioFrameSource] = await Promise.all([
-      MediaLoader.loadVideoMedia(file, (progress) => {
-        onLoadUpdateListener(progress - 1, file.name);
-      }),
-      MediaLoader.loadAudioMedia(file)
-    ]);
+    let videoFrameSource: Awaited<ReturnType<typeof MediaLoader.loadVideoMedia>> | null = null;
+    try {
+      const [frameSource, audioFrameSource] = await Promise.all([
+        MediaLoader.loadVideoMedia(file, (progress) => {
+          onLoadUpdateListener(progress - 1, file.name);
+        }).then((source) => {
+          videoFrameSource = source;
+          return source;
+        }),
+        MediaLoader.loadAudioMedia(file)
+      ]);
 
-    const videoMedia = new VideoMedia(file.name, frameSource);
-    const audioMedia = new AudioMedia(file.name, audioFrameSource);
-    const composedMedia = new ComposedMedia(videoMedia, audioMedia);
-    layers.push(composedMedia);
-    onLoadUpdateListener(100, file.name, composedMedia, composedMedia.audio.audioBuffer);
+      const videoMedia = new VideoMedia(file.name, frameSource);
+      const audioMedia = new AudioMedia(file.name, audioFrameSource);
+      const composedMedia = new ComposedMedia(videoMedia, audioMedia);
+      layers.push(composedMedia);
+      onLoadUpdateListener(100, file.name, composedMedia, composedMedia.audio.audioBuffer);
+    } catch (error) {
+      videoFrameSource?.cleanup();
+      throw error;
+    }
   }
 
   if (file.type.indexOf('image') >= 0) {

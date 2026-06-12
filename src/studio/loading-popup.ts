@@ -122,6 +122,20 @@ export class LoadingPopup {
     }
   }
 
+  cancelLoading(layerId: string): void {
+    if (!this.activeLoads.has(layerId)) {
+      return;
+    }
+
+    this.activeLoads.delete(layerId);
+
+    if (this.activeLoads.size === 0) {
+      this.#hide();
+    } else {
+      this.#updateDisplay();
+    }
+  }
+
   /**
    * Hide the loading popup
    */

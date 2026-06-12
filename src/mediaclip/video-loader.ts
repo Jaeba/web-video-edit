@@ -2,38 +2,59 @@ import {createDemuxer} from '@/video/demux';
 import {LayerFile, VideoMetadata} from '@/mediaclip/types';
 import {MediaBunnyDemuxer} from "@/video/demux/mediabunny-demuxer";
 
-type Callback = (progress: number, metadata: VideoMetadata | null) => void;
+type ProgressCallback = (progress: number) => void;
 
 export class VideoLoader {
   private videoDemuxer: MediaBunnyDemuxer;
-  private callback: Callback = () => {};
 
   constructor() {
     this.videoDemuxer = createDemuxer();
-    this.#setupDemuxerCallbacks();
   }
 
-  #setupDemuxerCallbacks(): void {
-    this.videoDemuxer.setOnProgressCallback((progress: number) => {
-      this.callback(progress, null);
+  async loadVideo(file: LayerFile, onProgress: ProgressCallback): Promise<VideoMetadata> {
+    let metadata: VideoMetadata | null = null;
+
+    this.videoDemuxer.setOnProgressCallback(onProgress);
+    this.videoDemuxer.setOnCompleteCallback((videoMetadata: VideoMetadata) => {
+      metadata = videoMetadata;
     });
 
-    this.videoDemuxer.setOnCompleteCallback((metadata: VideoMetadata) => {
-      this.callback(100, metadata);
-    });
+    await this.#readFileAsDataUrl(file);
+
+    try {
+      await this.videoDemuxer.initialize(file as File);
+    } catch (error) {
+      this.videoDemuxer.cleanup();
+      throw error instanceof Error ? error : new Error('Failed to decode video');
+    }
+
+    if (!metadata) {
+      this.videoDemuxer.cleanup();
+      throw new Error('Failed to load video metadata');
+    }
+
+    return metadata;
   }
 
-  async loadVideo(file: LayerFile, callback: Callback): Promise<void> {
-    this.callback = callback;
-    const reader = new FileReader();
-    reader.addEventListener("load", ((): void => {
-      if (reader && typeof reader.result === 'string') {
+  #readFileAsDataUrl(file: LayerFile): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.addEventListener('load', () => {
+        if (typeof reader.result !== 'string') {
+          reject(new Error('Failed to read video file'));
+          return;
+        }
         file.uri = reader.result;
-        this.videoDemuxer.initialize(file);
-      }
-    }).bind(this), false);
+        resolve();
+      }, false);
 
-    reader.readAsDataURL(file as File);
+      reader.addEventListener('error', () => {
+        reject(new Error('Failed to read video file'));
+      }, false);
+
+      reader.readAsDataURL(file as File);
+    });
   }
 
 }

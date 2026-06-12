@@ -5,6 +5,7 @@ import {AudioMedia} from '@/mediaclip/audio/audio';
 import {createTranscriptionService, TranscriptionService} from "@/transcription";
 import {exportToJson} from '@/common/utils';
 import {LoadingPopup} from './loading-popup';
+import {showDecodeErrorDialog} from './error-dialog';
 import {AspectRatioSelector} from './aspect-ratio-selector';
 import {SpeedControlInput} from "./speed-control-input";
 import {StudioState} from "@/common/studio-state";
@@ -172,7 +173,14 @@ export class VideoStudio {
       return [];
     }
     this.loadingPopup.startLoading(file.name, file.name);
-    return await createMediaFromFile(file);
+    try {
+      return await createMediaFromFile(file);
+    } catch (error) {
+      console.error(`Failed to load media from library: ${file.name}`, error);
+      this.loadingPopup.cancelLoading(file.name);
+      showDecodeErrorDialog(file.name);
+      return [];
+    }
   }
 
   onLayerLoadUpdate(
