@@ -1,8 +1,7 @@
+import {addDerivedReplicates} from './specimen-transforms.js';
 import {createSamples, setSample} from './specimen-grid.js';
 import type {RgbReplicate, SpecimenBundle, SpecimenConfig, SpecimenProgress} from './types.js';
 import {VideoFrameReader} from './video-frame-reader.js';
-
-const RGB_VALUES_PER_SAMPLE = 3;
 
 export function createRgbReplicate(width: number, height: number, depth: number): RgbReplicate {
   return {
@@ -10,8 +9,8 @@ export function createRgbReplicate(width: number, height: number, depth: number)
     width,
     height,
     depth,
-    valuesPerSample: RGB_VALUES_PER_SAMPLE,
-    samples: createSamples(width, height, depth, RGB_VALUES_PER_SAMPLE, Uint8Array),
+    valuesPerSample: 3,
+    samples: createSamples(width, height, depth, 3, Uint8Array),
   };
 }
 
@@ -74,12 +73,16 @@ export async function buildSpecimen(
       fillReplicateFromPixels(rgb, pixels, k);
     }
 
-    onProgress?.({message: 'Specimen ready', percent: 100});
+    onProgress?.({message: 'Computing derived replicates...', percent: 95});
 
-    return {
+    const bundle = addDerivedReplicates({
       config,
       replicates: new Map([['rgb', rgb]]),
-    };
+    });
+
+    onProgress?.({message: 'Specimen ready', percent: 100});
+
+    return bundle;
   } finally {
     reader.close();
   }

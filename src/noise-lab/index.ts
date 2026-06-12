@@ -5,6 +5,18 @@ export {NoiseLabService} from './noise-lab-service.js';
 export {NoiseLabView} from './noise-lab-view.js';
 export {buildSpecimen, createRgbReplicate, fillReplicateFromPixels} from './specimen-builder.js';
 export {
+  asNumericChannels,
+  channelHistogram,
+  collectChannelValues,
+  histogram,
+} from './specimen-analysis.js';
+export type {NumericChannelView} from './specimen-analysis.js';
+export {
+  addDerivedReplicates,
+  rgbToLuminance,
+  rgbToYuv,
+} from './specimen-transforms.js';
+export {
   assertReplicateDimensions,
   createSamples,
   estimateReplicateBytes,
