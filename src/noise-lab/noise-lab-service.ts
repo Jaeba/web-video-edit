@@ -175,6 +175,11 @@ export class NoiseLabService {
 
       this.#specimen = specimen;
       this.#view.showSpecimenReady();
+
+      const rgb = specimen.replicates.get('rgb');
+      if (rgb) {
+        this.#view.renderSpecimenSurvey(rgb);
+      }
     } catch (error) {
       console.error('Specimen preparation failed:', error);
       this.#view.updateProgress({

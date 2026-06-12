@@ -1,6 +1,7 @@
 import type {StoredFileMetadata} from '@/medialibrary/file-storage';
 import {formatSpecimenMemorySize} from './specimen-grid.js';
-import type {Region, SpecimenProgress, VideoFrameInfo} from './types.js';
+import {survey, surveyPixelSize} from './specimen-visualization.js';
+import type {Region, SpecimenProgress, SpecimenReplicate, VideoFrameInfo} from './types.js';
 
 export type VideoSelectedCallback = (fileId: string) => void;
 export type FrameChangedCallback = (frame: number, immediate?: boolean) => void;
@@ -24,6 +25,8 @@ export class NoiseLabView {
   #statusEl: HTMLElement | null = null;
   #progressBar: HTMLElement | null = null;
   #specimenEstimate: HTMLElement | null = null;
+  #surveySection: HTMLElement | null = null;
+  #surveyCanvas: HTMLCanvasElement | null = null;
   #videoInfo: HTMLElement | null = null;
 
   #onVideoSelected: VideoSelectedCallback | null = null;
@@ -167,6 +170,45 @@ export class NoiseLabView {
   clearSpecimenReady(): void {
     this.#specimenReady = false;
     this.#updateSpecimenEstimate();
+    this.#clearSpecimenSurvey();
+  }
+
+  renderSpecimenSurvey(replicate: SpecimenReplicate): void {
+    if (!this.#surveyCanvas || !this.#surveySection) {
+      return;
+    }
+
+    const canvas = this.#surveyCanvas;
+    const context = canvas.getContext('2d');
+
+    if (!context) {
+      return;
+    }
+
+    const scale = 4;
+    const padding = 4;
+    const margin = padding;
+
+    const surveySize = surveyPixelSize(replicate, scale, padding, margin);
+
+    canvas.width = surveySize.width;
+    canvas.height = surveySize.height;
+
+    context.fillStyle = 'rgb(24, 24, 28)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    survey(canvas, replicate, 0, 0, scale, null, padding, margin);
+
+    this.#surveySection.classList.add('visible');
+  }
+
+  #clearSpecimenSurvey(): void {
+    if (!this.#surveySection || !this.#surveyCanvas) {
+      return;
+    }
+
+    this.#surveySection.classList.remove('visible');
+    this.#surveyCanvas.width = 0;
+    this.#surveyCanvas.height = 0;
   }
 
   #buildUI(): void {
@@ -233,6 +275,14 @@ export class NoiseLabView {
           <div class="noise-lab-progress-bar" id="noise-lab-progress-bar"></div>
         </div>
         <div class="noise-lab-status" id="noise-lab-status"></div>
+
+        <div class="noise-lab-survey-section" id="noise-lab-survey-section">
+          <label>Specimen Survey</label>
+          <div class="noise-lab-survey-container">
+            <canvas id="noise-lab-survey-canvas" class="noise-lab-survey-canvas"></canvas>
+          </div>
+          <p class="noise-lab-hint">Rows: time slices, horizontal slices, vertical slices</p>
+        </div>
       </div>
     `;
 
@@ -249,6 +299,8 @@ export class NoiseLabView {
     this.#statusEl = this.#container.querySelector('#noise-lab-status');
     this.#progressBar = this.#container.querySelector('#noise-lab-progress-bar');
     this.#specimenEstimate = this.#container.querySelector('#noise-lab-specimen-estimate');
+    this.#surveySection = this.#container.querySelector('#noise-lab-survey-section');
+    this.#surveyCanvas = this.#container.querySelector('#noise-lab-survey-canvas');
     this.#videoInfo = this.#container.querySelector('#noise-lab-video-info');
 
     this.#bindEvents();

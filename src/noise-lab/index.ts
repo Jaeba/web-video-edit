@@ -17,6 +17,15 @@ export {
   rgbToYuv,
 } from './specimen-transforms.js';
 export {
+  clampAxisValue,
+  crossSection,
+  crossSectionPixelSize,
+  defaultSampleToRgb,
+  survey,
+  surveyPixelSize,
+} from './specimen-visualization.js';
+export type {CrossSectionAxis, CrossSectionPixelSize, SampleToRgb} from './specimen-visualization.js';
+export {
   assertReplicateDimensions,
   createSamples,
   estimateReplicateBytes,

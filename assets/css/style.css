@@ -2041,3 +2041,36 @@ a:visited {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+
+.noise-lab-survey-section {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.noise-lab-survey-section.visible {
+  display: flex;
+}
+
+.noise-lab-survey-section label {
+  display: block;
+  font-size: 13px;
+  color: rgb(192, 200, 213);
+}
+
+.noise-lab-survey-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgb(30, 30, 35);
+  border: 1px solid rgba(60, 60, 65, 0.8);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: auto;
+}
+
+.noise-lab-survey-canvas {
+  display: block;
+  border-radius: 4px;
+  image-rendering: pixelated;
+}
