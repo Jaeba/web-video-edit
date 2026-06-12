@@ -3,21 +3,36 @@ import {NoiseLabView} from './noise-lab-view.js';
 
 export {NoiseLabService} from './noise-lab-service.js';
 export {NoiseLabView} from './noise-lab-view.js';
+export {buildSpecimen, createRgbReplicate, fillReplicateFromPixels} from './specimen-builder.js';
 export {
-  buildSpecimen,
-  calculatePixelSpecimenBytes,
-  createEmptySpecimen,
-  fillSpecimenFromPixels,
-  formatPixelSpecimenMemorySize,
-} from './specimen-builder.js';
+  assertReplicateDimensions,
+  createSamples,
+  estimateReplicateBytes,
+  estimateSpecimenBytes,
+  formatMemorySize,
+  formatReplicateMemorySize,
+  formatSpecimenMemorySize,
+  getSample,
+  sampleBase,
+  sampleCount,
+  setSample,
+} from './specimen-grid.js';
 export {VideoFrameReader} from './video-frame-reader.js';
 export {RegionSelector} from './region-selector.js';
 export type {
+  KnownReplicate,
+  LuminanceReplicate,
+  NumericArrayConstructor,
+  NumericSampleArray,
   Region,
+  RgbReplicate,
+  SpecimenBundle,
   SpecimenConfig,
-  PixelSpecimen,
-  VideoFrameInfo,
   SpecimenProgress,
+  SpecimenReplicate,
+  SpecimenVariant,
+  VideoFrameInfo,
+  YuvReplicate,
 } from './types.js';
 
 export function createNoiseLabService(): NoiseLabService {

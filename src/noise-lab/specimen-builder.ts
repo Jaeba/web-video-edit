@@ -1,55 +1,33 @@
-import type {PixelSpecimen, SpecimenConfig, SpecimenProgress} from './types.js';
+import {createSamples, setSample} from './specimen-grid.js';
+import type {RgbReplicate, SpecimenBundle, SpecimenConfig, SpecimenProgress} from './types.js';
 import {VideoFrameReader} from './video-frame-reader.js';
 
-const BYTES_PER_STORED_NUMBER = 8;
+const RGB_VALUES_PER_SAMPLE = 3;
 
-export function calculatePixelSpecimenBytes(h: number, w: number, frameCount: number): number {
-  return h * w * frameCount * 3 * BYTES_PER_STORED_NUMBER;
+export function createRgbReplicate(width: number, height: number, depth: number): RgbReplicate {
+  return {
+    variant: 'rgb',
+    width,
+    height,
+    depth,
+    valuesPerSample: RGB_VALUES_PER_SAMPLE,
+    samples: createSamples(width, height, depth, RGB_VALUES_PER_SAMPLE, Uint8Array),
+  };
 }
 
-export function formatPixelSpecimenMemorySize(h: number, w: number, frameCount: number): string {
-  const bytes = calculatePixelSpecimenBytes(h, w, frameCount);
-  const megabytes = bytes / (1024 * 1024);
-
-  if (megabytes >= 0.01) {
-    return `${megabytes.toFixed(2)}Mb`;
-  }
-
-  const kilobytes = bytes / 1024;
-  return `${kilobytes.toFixed(1)}Kb`;
-}
-
-export function createEmptySpecimen(h: number, w: number, frameCount: number): PixelSpecimen {
-  const specimen: PixelSpecimen = [];
-  for (let i = 0; i < h; i++) {
-    const row: number[][][] = [];
-    for (let j = 0; j < w; j++) {
-      const column: number[][] = [];
-      for (let k = 0; k < frameCount; k++) {
-        column.push([0, 0, 0]);
-      }
-      row.push(column);
-    }
-    specimen.push(row);
-  }
-  return specimen;
-}
-
-export function fillSpecimenFromPixels(
-  specimen: PixelSpecimen,
+export function fillReplicateFromPixels(
+  replicate: RgbReplicate,
   pixels: Uint8ClampedArray,
-  w: number,
   frameIndex: number
 ): void {
-  const h = specimen.length;
-  for (let i = 0; i < h; i++) {
-    for (let j = 0; j < w; j++) {
-      const offset = (i * w + j) * 4;
-      specimen[i][j][frameIndex] = [
+  for (let y = 0; y < replicate.height; y++) {
+    for (let x = 0; x < replicate.width; x++) {
+      const offset = (y * replicate.width + x) * 4;
+      setSample(replicate, y, x, frameIndex, [
         pixels[offset],
         pixels[offset + 1],
         pixels[offset + 2],
-      ];
+      ]);
     }
   }
 }
@@ -58,7 +36,7 @@ export async function buildSpecimen(
   videoData: ArrayBuffer,
   config: SpecimenConfig,
   onProgress?: (progress: SpecimenProgress) => void
-): Promise<PixelSpecimen> {
+): Promise<SpecimenBundle> {
   const reader = new VideoFrameReader();
 
   try {
@@ -79,7 +57,7 @@ export async function buildSpecimen(
       throw new Error('Region extends beyond video frame bounds');
     }
 
-    const specimen = createEmptySpecimen(h, w, frameCount);
+    const rgb = createRgbReplicate(w, h, frameCount);
 
     for (let k = 0; k < frameCount; k++) {
       const frameIndex = startFrame + k;
@@ -93,11 +71,15 @@ export async function buildSpecimen(
         throw new Error(`Failed to read frame ${frameIndex}`);
       }
 
-      fillSpecimenFromPixels(specimen, pixels, w, k);
+      fillReplicateFromPixels(rgb, pixels, k);
     }
 
     onProgress?.({message: 'Specimen ready', percent: 100});
-    return specimen;
+
+    return {
+      config,
+      replicates: new Map([['rgb', rgb]]),
+    };
   } finally {
     reader.close();
   }

@@ -3,7 +3,7 @@ import {NoiseLabView} from './noise-lab-view.js';
 import {RegionSelector} from './region-selector.js';
 import {buildSpecimen} from './specimen-builder.js';
 import {VideoFrameReader} from './video-frame-reader.js';
-import type {PixelSpecimen, Region, SpecimenConfig} from './types.js';
+import type {Region, SpecimenBundle, SpecimenConfig} from './types.js';
 
 export class NoiseLabService {
   #view: NoiseLabView;
@@ -15,7 +15,7 @@ export class NoiseLabService {
   #currentFrame = 0;
   #frameLoadToken = 0;
   #framePreviewTimer: ReturnType<typeof setTimeout> | null = null;
-  #specimen: PixelSpecimen | null = null;
+  #specimen: SpecimenBundle | null = null;
   static readonly FRAME_PREVIEW_DEBOUNCE_MS = 80;
 
   constructor(view: NoiseLabView) {
@@ -40,7 +40,7 @@ export class NoiseLabService {
     await this.#loadVideoList();
   }
 
-  getSpecimen(): PixelSpecimen | null {
+  getSpecimen(): SpecimenBundle | null {
     return this.#specimen;
   }
 
