@@ -2,7 +2,7 @@ import type {StoredFileMetadata} from '@/medialibrary/file-storage';
 import type {PixelSpecimen, Region, SpecimenProgress, VideoFrameInfo} from './types.js';
 
 export type VideoSelectedCallback = (fileId: string) => void;
-export type FrameChangedCallback = (frame: number) => void;
+export type FrameChangedCallback = (frame: number, immediate?: boolean) => void;
 export type RegionChangedCallback = (region: Region) => void;
 export type PrepareSpecimenCallback = () => void;
 
@@ -269,7 +269,12 @@ export class NoiseLabView {
     this.#frameSlider?.addEventListener('input', () => {
       const frame = Number(this.#frameSlider?.value ?? 0);
       this.#updateFrameLabel(frame);
-      this.#onFrameChanged?.(frame);
+      this.#onFrameChanged?.(frame, false);
+    });
+
+    this.#frameSlider?.addEventListener('change', () => {
+      const frame = Number(this.#frameSlider?.value ?? 0);
+      this.#onFrameChanged?.(frame, true);
     });
 
     for (const key of ['x', 'y', 'w', 'h'] as const) {

@@ -8,6 +8,7 @@ export class VideoFrameReader {
   #height = 0;
   #canvas = new OffscreenCanvas(1, 1);
   #context = this.#canvas.getContext('2d', {willReadFrequently: true})!;
+  #decodeChain: Promise<unknown> = Promise.resolve();
 
   async open(
     videoData: ArrayBuffer,
@@ -76,21 +77,32 @@ export class VideoFrameReader {
       return null;
     }
 
+    const decode = this.#decodeChain.then(() => this.#decodeFrameBitmap(frameIndex));
+    this.#decodeChain = decode.catch(() => undefined);
+    return decode;
+  }
+
+  async #decodeFrameBitmap(frameIndex: number): Promise<ImageBitmap | null> {
     const timestamp = this.#timestamps[frameIndex];
-    const sample = await this.#videoSink.getSample(timestamp);
-    if (!sample) {
-      return null;
-    }
+    let sample = null;
 
     try {
+      sample = await this.#videoSink!.getSample(timestamp);
+      if (!sample) {
+        return null;
+      }
+
       const videoFrame = sample.toVideoFrame();
       try {
         return await createImageBitmap(videoFrame);
       } finally {
         videoFrame.close();
       }
+    } catch (error) {
+      console.warn(`Failed to decode frame ${frameIndex}:`, error);
+      return null;
     } finally {
-      sample.close();
+      sample?.close();
     }
   }
 
@@ -121,5 +133,6 @@ export class VideoFrameReader {
     this.#timestamps = [];
     this.#width = 0;
     this.#height = 0;
+    this.#decodeChain = Promise.resolve();
   }
 }

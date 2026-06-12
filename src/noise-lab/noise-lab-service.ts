@@ -14,7 +14,9 @@ export class NoiseLabService {
   #videoBuffer: ArrayBuffer | null = null;
   #currentFrame = 0;
   #frameLoadToken = 0;
+  #framePreviewTimer: ReturnType<typeof setTimeout> | null = null;
   #specimen: PixelSpecimen | null = null;
+  static readonly FRAME_PREVIEW_DEBOUNCE_MS = 80;
 
   constructor(view: NoiseLabView) {
     this.#view = view;
@@ -31,7 +33,7 @@ export class NoiseLabService {
     }
 
     this.#view.setVideoSelectedCallback((fileId) => this.#onVideoSelected(fileId));
-    this.#view.setFrameChangedCallback((frame) => this.#onFrameChanged(frame));
+    this.#view.setFrameChangedCallback((frame, immediate) => this.#onFrameChanged(frame, immediate));
     this.#view.setRegionChangedCallback((region) => this.#onRegionChanged(region));
     this.#view.setPrepareSpecimenCallback(() => this.#prepareSpecimen());
 
@@ -91,9 +93,23 @@ export class NoiseLabService {
     }
   }
 
-  async #onFrameChanged(frame: number): Promise<void> {
+  #onFrameChanged(frame: number, immediate = false): void {
     this.#currentFrame = frame;
-    await this.#loadPreviewFrame(frame);
+
+    if (this.#framePreviewTimer) {
+      clearTimeout(this.#framePreviewTimer);
+      this.#framePreviewTimer = null;
+    }
+
+    if (immediate) {
+      void this.#loadPreviewFrame(frame);
+      return;
+    }
+
+    this.#framePreviewTimer = setTimeout(() => {
+      this.#framePreviewTimer = null;
+      void this.#loadPreviewFrame(frame);
+    }, NoiseLabService.FRAME_PREVIEW_DEBOUNCE_MS);
   }
 
   #onRegionChanged(region: Region): void {
@@ -114,14 +130,21 @@ export class NoiseLabService {
     }
 
     const token = ++this.#frameLoadToken;
-    const bitmap = await this.#previewReader.getFrameBitmap(frame);
 
-    if (token !== this.#frameLoadToken) {
-      bitmap?.close();
-      return;
+    try {
+      const bitmap = await this.#previewReader.getFrameBitmap(frame);
+
+      if (token !== this.#frameLoadToken) {
+        bitmap?.close();
+        return;
+      }
+
+      this.#regionSelector?.setFrame(bitmap);
+    } catch (error) {
+      if (token === this.#frameLoadToken) {
+        console.warn(`Preview frame ${frame} failed:`, error);
+      }
     }
-
-    this.#regionSelector?.setFrame(bitmap);
   }
 
   async #prepareSpecimen(): Promise<void> {
