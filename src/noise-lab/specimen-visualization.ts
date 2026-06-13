@@ -9,7 +9,7 @@ export type CrossSectionAxis = 0 | 1 | 2;
 // 1: fixed x and (u, v) = (z, y)
 // 2: fixed z and (u, v) = (x, y)
 
-export interface CrossSectionPixelSize {
+export interface PixelSize {
   width: number;
   height: number;
 }
@@ -74,7 +74,7 @@ export function crossSectionPixelSize(
   axis: CrossSectionAxis,
   scaleX: number,
   scaleY = scaleX
-): CrossSectionPixelSize {
+): PixelSize {
   switch (axis) {
     case 0:
       return {width: replicate.width * scaleX, height: replicate.depth * scaleY};
@@ -96,7 +96,7 @@ export function crossSection(
   toRgb: SampleToRgb | null = null,
   scaleX = scale,
   scaleY = scale
-): CrossSectionPixelSize {
+): PixelSize {
   const context = resolveContext(canvas);
   const colorize = toRgb ?? defaultSampleToRgb;
   const fixed = clampAxisValue(replicate, axis, axisValue);
@@ -136,7 +136,7 @@ export function surveyPixelSize(
   scale: number,
   padding = scale,
   margin = padding
-): CrossSectionPixelSize {
+): PixelSize {
   const columnWidth = Math.max(replicate.width, replicate.depth) * scale;
   const rowHeight = Math.max(replicate.height, replicate.depth) * scale;
   return {
@@ -154,7 +154,7 @@ export function survey(
   toRgb: SampleToRgb | null = null,
   padding = scale,
   margin = padding
-): CrossSectionPixelSize {
+): PixelSize {
   const {width, height, depth} = replicate;
   const zValues = [0, Math.floor(depth / 2), depth - 1];
   const yValues = [0, Math.floor(height / 2), height - 1];
@@ -191,4 +191,44 @@ export function survey(
     width: columnWidth * 3 + padding * 2 + margin * 2,
     height: rowHeight * 3 + padding * 2 + margin * 2
   };
+}
+
+export function fanPixelSize(
+  replicate: SpecimenReplicate,
+  depth: number,
+  srcWidth: number,
+  srcHeight: number,
+  scale: number,
+  padding = scale
+): PixelSize {
+  return {width: depth * srcWidth * scale + padding * (depth - 1), height: srcHeight * scale};
+}
+
+export function fan(
+  canvas: HTMLCanvasElement | CanvasRenderingContext2D,
+  replicate: SpecimenReplicate,
+  destY: number,
+  destX: number,
+  srcY: number,
+  srcX: number,
+  srcWidth: number,
+  srcHeight: number,
+  scale: number,
+  toRgb: SampleToRgb | null = null,
+  padding = scale
+): void {
+  const {width, height, depth} = replicate;
+
+  const context = resolveContext(canvas);
+  const colorize = toRgb ?? defaultSampleToRgb;
+
+  for (let z = 0; z < depth; z++) {
+    for (let i = 0; i < srcHeight; i++) {
+      for (let j = 0; j < srcWidth; j++) {
+        const [r, g, b] = colorize(getSample(replicate, z, srcY + i, srcX + j));
+        context.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        context.fillRect(destX + scale * (z * srcWidth + j) + z * padding, destY + scale * i, scale, scale);
+      }
+    }
+  }
 }

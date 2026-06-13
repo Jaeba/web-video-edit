@@ -21,10 +21,12 @@ export {
   crossSection,
   crossSectionPixelSize,
   defaultSampleToRgb,
+  fan,
+  fanPixelSize,
   survey,
   surveyPixelSize,
 } from './specimen-visualization.js';
-export type {CrossSectionAxis, CrossSectionPixelSize, SampleToRgb} from './specimen-visualization.js';
+export type {CrossSectionAxis, PixelSize, SampleToRgb} from './specimen-visualization.js';
 export {
   assertReplicateDimensions,
   createSamples,
